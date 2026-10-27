@@ -1,0 +1,59 @@
+;; Everything Datomic-specific in this demo: the schema, the story's transactions, the auditor's
+;; queries. There are no history tables, valid_from columns, triggers or procedures to write.
+
+{:schema
+ [{:db/ident :customer/id    :db/valueType :db.type/string  :db/cardinality :db.cardinality/one
+   :db/unique :db.unique/identity}
+  {:db/ident :customer/risk  :db/valueType :db.type/keyword :db/cardinality :db.cardinality/one}
+  {:db/ident :customer/limit :db/valueType :db.type/long    :db/cardinality :db.cardinality/one}
+  ;; who and why are facts about a *transaction*, not about a customer
+  {:db/ident :audit/by       :db/valueType :db.type/string  :db/cardinality :db.cardinality/one}
+  {:db/ident :audit/reason   :db/valueType :db.type/string  :db/cardinality :db.cardinality/one}
+  ;; replaying the story: transaction time is pinned (it can only move forward)
+  {:db/id "datomic.tx" :db/txInstant #inst "2026-01-01T00:00:00Z"}]
+
+ ;; ---------------------------------------------------------------- the story, as data
+
+ :onboarding
+ [{:customer/id "ACME"   :customer/risk :low    :customer/limit 1000000}
+  {:customer/id "GLOBEX" :customer/risk :medium :customer/limit 500000}
+  {:db/id "datomic.tx" :db/txInstant #inst "2026-01-10T09:00:00Z"
+   :audit/by "alice" :audit/reason "onboarding"}]
+
+ :limit-raise
+ [[:db/add [:customer/id "ACME"] :customer/limit 2000000]
+  {:db/id "datomic.tx" :db/txInstant #inst "2026-02-01T10:00:00Z"
+   :audit/by "alice" :audit/reason "annual review"}]
+
+ :kyc-correction
+ [[:db/add [:customer/id "ACME"] :customer/risk :high]
+  {:db/id "datomic.tx" :db/txInstant #inst "2026-04-07T14:00:00Z"
+   :audit/by "bob" :audit/reason "KYC-123 adverse media dated 2026-01-20"}]
+
+ ;; ---------------------------------------------------------------- the auditor's questions
+ ;; None of them mentions time: time is chosen by the database value they run against.
+
+ :report
+ [:find ?id ?risk ?limit
+  :where [?c :customer/id ?id]
+         [?c :customer/risk ?risk]
+         [?c :customer/limit ?limit]]
+
+ :audit-trail                          ; run against (d/history db)
+ [:find ?when ?attr ?v ?added ?by ?why
+  :in $ ?id
+  :where [?c :customer/id ?id]
+         [?c ?a ?v ?tx ?added]
+         [?a :db/ident ?attr]
+         [?tx :db/txInstant ?when]
+         [?tx :audit/by ?by]
+         [?tx :audit/reason ?why]]
+
+ :changed-since                        ; $ = now, $since = (d/since db report-t)
+ [:find ?id ?attr ?v ?when ?by
+  :in $ $since
+  :where [$since ?c ?a ?v ?tx true]
+         [$ ?c :customer/id ?id]
+         [$ ?a :db/ident ?attr]
+         [$ ?tx :db/txInstant ?when]
+         [$ ?tx :audit/by ?by]]}
