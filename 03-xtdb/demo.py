@@ -63,7 +63,7 @@ REPORT = "SELECT _id AS customer, risk, credit_limit FROM customers ORDER BY _id
 
 with psycopg.connect(DSN, autocommit=True) as db:
     if db.execute("SELECT 1 FROM information_schema.tables WHERE table_name = 'customers'").fetchone():
-        sys.exit("XTDB already has data: run `docker compose down && docker compose up -d` first")
+        sys.exit("XTDB already has data: run `docker compose down && docker compose up -d --wait` first")
 
     step("2026-01-10  alice onboards two customers (no schema, no history tables)")
     tx(db, "2026-01-10T09:00:00Z", """
