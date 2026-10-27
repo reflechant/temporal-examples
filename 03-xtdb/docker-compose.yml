@@ -1,0 +1,9 @@
+services:
+  xtdb:
+    image: ghcr.io/xtdb/xtdb:2.2.0
+    ports:
+      - "54322:5432"
+    healthcheck:  # the image's own check uses `wget --spider`, which healthz rejects
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8080/healthz/alive"]
+      interval: 1s
+      retries: 60
