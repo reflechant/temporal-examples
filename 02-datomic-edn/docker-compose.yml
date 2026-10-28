@@ -1,0 +1,9 @@
+services:
+  datomic:
+    build: .
+    ports:
+      - "8999:8998"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8998/data/"]
+      interval: 2s
+      retries: 60
