@@ -1,5 +1,6 @@
-(ns bank
-  "Alice's risk rating in Datomic: system time (what did we believe, when?) is built in.
+(ns bank.with-valid-time
+  "Alice's risk rating in Datomic, with valid time modelled by hand (`:customer/valid-from`).
+  System time (what did we believe, when?) is built in; valid time (when was it true?) is not.
 
   REPL-first: start Datomic with `docker compose up -d --wait`, start a REPL in this folder,
   then evaluate the forms in the `comment` block at the bottom, one by one."

@@ -8,7 +8,7 @@ only: how much of the time handling you have to build yourself.
 | [`01-postgres`](01-postgres) | both, **hand-made** | Possible: the writes are the same SQL as XTDB's, but behind them sit ~70 lines of views, triggers, a time-travel function and guards per table, which a superuser can still switch off |
 | [`02-datomic`](02-datomic) | system time, **built-in** | "What did we believe then?" is free: the same query against the database as of then. Valid time has to be modelled by hand |
 | [`02-datomic-edn`](02-datomic-edn) | system time, **built-in** | Same, with all Datomic code in one `bank.edn` to put next to `schema.sql`; Python only orchestrates |
-| [`02-datomic-clj`](02-datomic-clj) | system time, **built-in** | Same, in Clojure only, from a REPL against Datomic in Docker |
+| [`02-datomic-clj`](02-datomic-clj) | system time, **built-in** | Same, in Clojure only, from a REPL against Datomic in Docker, in two versions: without valid time (Q1 can't be asked) and with it modelled by hand |
 | [`03-xtdb`](03-xtdb) | both, **built-in** | No schema, no code: the same `INSERT`s as Postgres, and one `FOR … AS OF` clause per time axis |
 | [`03-xtdb-clj`](03-xtdb-clj) | both, **built-in** | Same, in Clojure only (`xtdb.api`, XTQL), from a REPL against XTDB in Docker |
 
