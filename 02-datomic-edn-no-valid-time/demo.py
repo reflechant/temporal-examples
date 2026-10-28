@@ -95,9 +95,12 @@ print(f"\033[2m;; rating\n{form('rating')}\033[0m")
 step("Q2: what did we believe on 2026-01-10?  The database as of then: built in")
 query("rating", ["_id", "name", "risk_rating"], db(as_of='#inst "2026-01-10T12:00:00Z"'))
 
-step("Q1: what do we now believe was true on 2026-01-10?  Can't be asked")
+step("Q1: what do we now believe was true on 2026-01-10?  Can't be asked: the query has no date in it")
 print("  The closest is what we believe now, which is about now, not about 2026-01-10:\n")
 query("rating", ["_id", "name", "risk_rating"], db())
+print("  HIGH matches Q1 only because the correction still holds today. There is no date to pass:\n"
+      "  asked about 2025-12-31, before Alice was a customer, this is still the only query, and it\n"
+      "  still says HIGH.\n")
 
 step("... and the database's own history says Alice became HIGH on 2026-01-15, not 2026-01-01")
 print(f"\033[2m;; rating-since\n{form('rating-since')}\033[0m")
