@@ -11,6 +11,7 @@ handling you have to build yourself.
 | [`02-datomic-edn`](02-datomic-edn) | system time, **built-in** | Same as `02-datomic`, but all Datomic code (schema, transactions, queries) sits in one `bank.edn` to put next to `schema.sql`; Python only orchestrates |
 | [`02-datomic-clj`](02-datomic-clj) | system time, **built-in** | Same story in Clojure only, peer API from a REPL against Datomic running in Docker; plus `pull`, `d/with` what-ifs and raw datoms to play with |
 | [`03-xtdb`](03-xtdb) | system + business time, **built-in** | Both questions are one SQL clause; existing report SQL runs unchanged at any point of either timeline |
+| [`03-xtdb-clj`](03-xtdb-clj) | system + business time, **built-in** | Same story in Clojure only: `xtdb.api` and XTQL from a REPL against XTDB in Docker; time-free queries with the point in time chosen per call |
 
 ## The story (identical in all three)
 
@@ -47,7 +48,7 @@ cd 01-postgres && docker compose up -d --wait && python demo.py
 ```
 
 Same for `02-datomic` / `02-datomic-edn` (first build downloads Datomic Pro, ~270 MB) and `03-xtdb`.
-Ports don't clash (54321, 8998, 8999, 4334–4335, 54322), so start all three containers before the talk.
+Ports don't clash (54321, 8998, 8999, 4334–4335, 54322, 54323), so start all the containers you need before the talk.
 
 Each script pauses before every step when run in a terminal (press Enter: the next statement is
 printed, then its result), so you can talk over it. `--no-pause` runs straight through.

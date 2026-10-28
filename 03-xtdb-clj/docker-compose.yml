@@ -1,0 +1,11 @@
+services:
+  xtdb:
+    image: ghcr.io/xtdb/xtdb:2.2.0
+    ports:
+      - "54323:5432"
+    tmpfs:  # data lives in memory: `docker compose restart` gives a clean slate to replay the story
+      - /var/lib/xtdb:uid=20000,gid=20000
+    healthcheck:  # the image's own check uses `wget --spider`, which healthz rejects
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8080/healthz/alive"]
+      interval: 1s
+      retries: 60
