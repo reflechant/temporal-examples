@@ -9,6 +9,7 @@ handling you have to build yourself.
 | [`01-postgres`](01-postgres) | both, **hand-made** | Can be done; costs a split-the-periods procedure per table, two range predicates per table per query, and history is only as safe as everyone's discipline |
 | [`02-datomic`](02-datomic) | system time, **built-in** | "What did we know, when, who, why?" is free and tamper-proof. "What was *true* at date X?" after a backdated correction is not |
 | [`02-datomic-edn`](02-datomic-edn) | system time, **built-in** | Same as `02-datomic`, but all Datomic code (schema, transactions, queries) sits in one `bank.edn` to put next to `schema.sql`; Python only orchestrates |
+| [`02-datomic-clj`](02-datomic-clj) | system time, **built-in** | Same story in Clojure only, peer API from a REPL against Datomic running in Docker; plus `pull`, `d/with` what-ifs and raw datoms to play with |
 | [`03-xtdb`](03-xtdb) | system + business time, **built-in** | Both questions are one SQL clause; existing report SQL runs unchanged at any point of either timeline |
 
 ## The story (identical in all three)
@@ -46,7 +47,7 @@ cd 01-postgres && docker compose up -d --wait && python demo.py
 ```
 
 Same for `02-datomic` / `02-datomic-edn` (first build downloads Datomic Pro, ~270 MB) and `03-xtdb`.
-Ports don't clash (54321, 8998, 8999, 54322), so start all three containers before the talk.
+Ports don't clash (54321, 8998, 8999, 4334–4335, 54322), so start all three containers before the talk.
 
 Each script pauses before every step when run in a terminal (press Enter: the next statement is
 printed, then its result), so you can talk over it. `--no-pause` runs straight through.
