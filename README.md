@@ -8,6 +8,7 @@ only: how much of the time handling you have to build yourself.
 | [`01-postgres`](01-postgres) | both, **hand-made** | Possible: the writes are the same SQL as XTDB's, but behind them sit ~70 lines of views, triggers, a time-travel function and guards per table, which a superuser can still switch off |
 | [`02-datomic`](02-datomic) | system time, **built-in** | "What did we believe then?" is free: the same query against the database as of then. Valid time has to be modelled by hand |
 | [`02-datomic-edn`](02-datomic-edn) | system time, **built-in** | Same, with all Datomic code in one `bank.edn` to put next to `schema.sql`; Python only orchestrates |
+| [`02-datomic-edn-no-valid-time`](02-datomic-edn-no-valid-time) | system time, **built-in** | Same structure, but Datomic as it comes, without the hand-modelled `valid-from`: Q2 is free, Q1 can't be asked |
 | [`02-datomic-clj`](02-datomic-clj) | system time, **built-in** | Same, in Clojure only, from a REPL against Datomic in Docker, in two versions: without valid time (Q1 can't be asked) and with it modelled by hand |
 | [`03-xtdb`](03-xtdb) | both, **built-in** | No schema, no code: the same `INSERT`s as Postgres, and one `FOR … AS OF` clause per time axis |
 | [`03-xtdb-clj`](03-xtdb-clj) | both, **built-in** | Same, in Clojure only (`xtdb.api`, XTQL), from a REPL against XTDB in Docker |
@@ -47,8 +48,8 @@ pip install -r 01-postgres/requirements.txt -r 02-datomic/requirements.txt -r 03
 cd 01-postgres && docker compose up -d --wait && python demo.py
 ```
 
-The same applies to `02-datomic`, `02-datomic-edn` (the first build downloads Datomic Pro,
-~270 MB) and `03-xtdb`. Ports don't clash (54321, 8998, 8999, 4334–4335, 54322, 54323), so
+The same applies to `02-datomic`, `02-datomic-edn`, `02-datomic-edn-no-valid-time` (the first build downloads Datomic Pro,
+~270 MB) and `03-xtdb`. Ports don't clash (54321, 8997, 8998, 8999, 4334–4335, 54322, 54323), so
 start all the containers you need before the talk.
 
 The Python scripts pause before every step when run in a terminal (press Enter: the next
