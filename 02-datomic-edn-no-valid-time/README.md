@@ -1,25 +1,31 @@
-# 02 (EDN variant, no valid time): Datomic as it comes
+# 02-datomic-edn-no-valid-time: Datomic as it comes
 
-The same structure as [`02-datomic-edn`](../02-datomic-edn): all Datomic code is in
-[`bank.edn`](bank.edn), and [`demo.py`](demo.py) only sends forms from it by name. This one
-**doesn't model valid time at all**: no `:customer/valid-from`, just `name` and `risk-rating`.
+The same structure as [`02-datomic-edn`](../02-datomic-edn) (all Datomic code in
+[`bank.edn`](bank.edn)), but **without any valid time**: just `name` and `risk-rating`. It shows
+what Datomic gives you for free (Q2) and what it doesn't (Q1).
+
+## Run
+
+From this folder, with the Python environment from the [top-level README](../README.md#running):
 
 ```sh
-docker compose up -d --wait      # first build downloads Datomic Pro (~270 MB)
-pip install -r requirements.txt
-python demo.py                   # --no-pause to run straight through
+docker compose up -d --wait   # first time: builds an image with Datomic Pro (~270 MB download)
+python demo.py                # --no-pause to run straight through; re-run any time
+docker compose down           # when done
 ```
 
-It runs on port 8997, so it can run alongside `02-datomic` (8998) and `02-datomic-edn` (8999).
+The REST server listens on port 8997, so this can run alongside the other Datomic demos.
 
-What it shows:
+## What to look at
 
 - **Q2: what did we believe on 2026-01-10?** It's built in: the `rating` query against the
-  database `as-of` 2026-01-10 returns LOW.
+  database as of 2026-01-10 returns LOW.
 - **Q1: what do we now believe was true on 2026-01-10?** It can't be asked. The closest is the
-  current database, HIGH, but that describes now, not 2026-01-10.
+  current database, which says HIGH, but the query has no date in it. It matches Q1's answer
+  only because the correction still holds today, and it would give the same answer for any
+  date, including 2025-12-31, before Alice was a customer.
 - The history query even says Alice became HIGH on **2026-01-15**, the day of the correction.
   "Since 2026-01-01" has nowhere to go.
 
-Run it before `02-datomic-edn` to show the gap, then show how a hand-modelled `valid-from`
-fills it.
+Run this before [`02-datomic-edn`](../02-datomic-edn) to show the gap, then show how a
+hand-modelled `valid-from` fills it.
