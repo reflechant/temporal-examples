@@ -1,0 +1,10 @@
+services:
+  datomic:
+    build: .
+    ports:
+      - "4334:4334"   # transactor
+      - "4335:4335"   # dev storage (H2), read directly by the peer in your REPL
+    healthcheck:
+      test: ["CMD", "bash", "-c", "</dev/tcp/localhost/4334"]
+      interval: 2s
+      retries: 60

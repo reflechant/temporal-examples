@@ -1,0 +1,3 @@
+{:paths ["src"]
+ :deps  {org.clojure/clojure {:mvn/version "1.12.4"}
+         com.datomic/peer    {:mvn/version "1.0.7745"}}}
