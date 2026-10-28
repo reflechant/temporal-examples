@@ -10,8 +10,10 @@ and then how it's filled:
 | [`bank.with-valid-time`](src/bank/with_valid_time.clj) | hand-modelled `:customer/valid-from` | `(d/q rating-on db jan-10)`: HIGH | `(d/q rating-on (d/as-of db jan-10) jan-10)`: LOW |
 
 ¹ The current database says HIGH, but that query has no date in it. It matches Q1's answer
-only because the correction still holds today. The history even says Alice became HIGH on
-2026-01-15, not 2026-01-01.
+only because the correction still holds today, and it would say the same about 2025-12-31,
+before Alice was a customer. The history even says Alice became HIGH on 2026-01-15, not
+2026-01-01. `bank.with-valid-time` ends with that 2025-12-31 check, which correctly returns
+nothing.
 
 ## Run
 

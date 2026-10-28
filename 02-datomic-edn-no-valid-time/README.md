@@ -20,10 +20,11 @@ The REST server listens on port 8997, so this can run alongside the other Datomi
 
 - **Q2: what did we believe on 2026-01-10?** It's built in: the `rating` query against the
   database as of 2026-01-10 returns LOW.
-- **Q1: what do we now believe was true on 2026-01-10?** It can't be asked. The closest is the
-  current database, which says HIGH, but the query has no date in it. It matches Q1's answer
-  only because the correction still holds today, and it would give the same answer for any
-  date, including 2025-12-31, before Alice was a customer.
+- **Q1: what do we now believe was true on 2026-01-10?** It can't be asked: there's no date to
+  put in the query. The closest is the current database, which says HIGH. That matches Q1's
+  answer only because the correction still holds today; it would give the same answer for any
+  date, including 2025-12-31, before Alice was a customer. The demo says so right after the
+  result.
 - The history query even says Alice became HIGH on **2026-01-15**, the day of the correction.
   "Since 2026-01-01" has nowhere to go.
 

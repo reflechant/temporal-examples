@@ -24,3 +24,6 @@ The REST server listens on port 8999, so this can run alongside the other Datomi
   against the database as of 2026-01-10.
 - `:customer/valid-from` is modelled by hand: compare with
   [`02-datomic-edn-no-valid-time`](../02-datomic-edn-no-valid-time), where Q1 can't be asked.
+- A last check asks what we now believe was true on 2025-12-31, before Alice was a customer,
+  and correctly gets nothing. Without valid time that question can't even be put to the
+  database (see [`02-datomic-edn-no-valid-time`](../02-datomic-edn-no-valid-time)).

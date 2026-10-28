@@ -48,9 +48,11 @@
   ;; Q2: what did we believe on 2026-01-10?  The database as of then: built in.
   (d/q rating (d/as-of (d/db conn) jan-10))
 
-  ;; Q1: what do we now believe was true on 2026-01-10?  Can't be asked. The closest is
-  ;; "what do we believe now", which is about now, not about 2026-01-10:
+  ;; Q1: what do we now believe was true on 2026-01-10?  Can't be asked: there is no date to
+  ;; put in the query. The closest is "what do we believe now", which is about now:
   (d/q rating (d/db conn))
+  ;; HIGH matches Q1 only because the correction still holds today. Asked about 2025-12-31,
+  ;; before Alice was a customer, this is still the only query, and it still says HIGH.
 
   ;; ... and the database's own history says Alice became HIGH on 2026-01-15, not 2026-01-01:
   (d/q '[:find ?rating ?since

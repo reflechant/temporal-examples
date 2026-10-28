@@ -120,7 +120,8 @@ through.
 - **Without valid time, Datomic's "now" looks like a Q1 answer, but isn't.** The current value
   is HIGH, which matches Q1 only because the correction still holds today. The query has no
   date in it, so it gives the same answer for any date, e.g. for 2025-12-31, before Alice was
-  a customer.
+  a customer. The with-valid-time Datomic demos end with that 2025-12-31 check, which
+  correctly returns nothing.
 - **Datomic from Python** goes through the REST server bundled with Datomic Pro. Datomic has no
   official Python client, and the REST server is
   [documented as legacy](https://docs.datomic.com/reference/rest.html) (still shipped, critical

@@ -87,3 +87,6 @@ q(RATING_ON, db(), '#inst "2026-01-10T12:00:00Z"')
 
 step("Q2: what did we believe on 2026-01-10?  Same query, against the database as of then")
 q(RATING_ON, db(as_of='#inst "2026-01-10T12:00:00Z"'), '#inst "2026-01-10T12:00:00Z"')
+
+step("Check: what do we now believe was true on 2025-12-31, before Alice was a customer?")
+q(RATING_ON, db(), '#inst "2025-12-31T12:00:00Z"')

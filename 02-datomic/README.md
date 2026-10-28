@@ -25,6 +25,9 @@ Each run creates a fresh database.
   database as of 2026-01-10 ([filters docs](https://docs.datomic.com/reference/filters.html)).
 - `:customer/valid-from` is modelled by hand. A single attribute is enough for one "true
   since" date; real business-time history would need an entity per version.
+- A last check asks what we now believe was true on 2025-12-31, before Alice was a customer,
+  and correctly gets nothing. Without valid time that question can't even be put to the
+  database (see [`02-datomic-edn-no-valid-time`](../02-datomic-edn-no-valid-time)).
 
 ## Notes
 

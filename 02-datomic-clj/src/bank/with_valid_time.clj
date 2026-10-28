@@ -58,4 +58,7 @@
 
   ;; Q2: what did we believe on 2026-01-10?
   (d/q rating-on (d/as-of (d/db conn) jan-10) jan-10)
+
+  ;; Check: what do we now believe was true on 2025-12-31, before Alice was a customer? Nothing.
+  (d/q rating-on (d/db conn) #inst "2025-12-31T12:00:00Z")
   )
