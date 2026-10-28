@@ -1,0 +1,29 @@
+;; Everything Datomic-specific in this demo: the schema, the story's transactions, the queries.
+;; Datomic as it comes: system time is built in, valid time is not modelled at all.
+
+{:schema
+ [{:db/ident :customer/name        :db/valueType :db.type/string  :db/cardinality :db.cardinality/one
+   :db/unique :db.unique/identity}
+  {:db/ident :customer/risk-rating :db/valueType :db.type/keyword :db/cardinality :db.cardinality/one}
+  {:db/id "datomic.tx" :db/txInstant #inst "2025-12-31T00:00:00Z"}]        ; demo clock
+
+ :record-alice
+ [{:customer/name "Alice" :customer/risk-rating :low}
+  {:db/id "datomic.tx" :db/txInstant #inst "2026-01-01T09:00:00Z"}]        ; demo clock
+
+ :correct-alice                        ; "since 2026-01-01" has nowhere to go
+ [{:customer/name "Alice" :customer/risk-rating :high}
+  {:db/id "datomic.tx" :db/txInstant #inst "2026-01-15T10:00:00Z"}]        ; demo clock
+
+ ;; What the rating is, in whichever database value it runs against: now, or (d/as-of db t).
+ :rating
+ [:find ?c ?name ?rating
+  :where [?c :customer/name ?name]
+         [?c :customer/risk-rating ?rating]]
+
+ ;; Since when each rating holds, according to the database: run against (d/history db).
+ :rating-since
+ [:find ?c ?name ?rating ?since
+  :where [?c :customer/name ?name]
+         [?c :customer/risk-rating ?rating ?tx true]
+         [?tx :db/txInstant ?since]]}
