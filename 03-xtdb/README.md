@@ -12,14 +12,8 @@ XTDB 2.x speaks the Postgres wire protocol, so the driver is the same `psycopg` 
 
 What to point at while it runs:
 
-- No schema, no history columns, no procedure. Onboarding is an `INSERT`, the limit change a
-  plain `UPDATE`; both are versioned automatically on both axes.
-- The backdated correction is one clause: `UPDATE … FOR PORTION OF VALID_TIME FROM …`. XTDB
-  splits the periods and keeps the February limit change intact, the work the Postgres
-  procedure does by hand ([DML docs](https://docs.xtdb.com/reference/main/sql/txs)).
-- The report is ordinary SQL with no time predicates. `SETTING DEFAULT VALID_TIME AS OF …,
-  DEFAULT SYSTEM_TIME AS OF …` runs the **same** query as filed (question 1) or as we know it
-  now (question 2), joins included.
-- Question 3 joins the table with itself at two points of system time.
-- The naive `SELECT` returns the current state, one row. The DBA's plain `UPDATE` adds a
-  version instead of overwriting one, so the filed report is still reproducible.
+- There's no schema and no code. The two writes are the same `INSERT`s as in the Postgres
+  demo: the first is valid from now (the default), the second from `_valid_from`
+  ([DML docs](https://docs.xtdb.com/reference/main/sql/txs)).
+- Q1 is `FOR VALID_TIME AS OF`; Q2 adds `FOR SYSTEM_TIME AS OF`. Postgres needs the
+  hand-written `customers_as_of` function for the same thing.

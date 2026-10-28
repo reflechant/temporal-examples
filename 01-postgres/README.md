@@ -6,18 +6,27 @@ pip install -r requirements.txt
 python demo.py            # --no-pause to run straight through
 ```
 
-- [`schema.sql`](schema.sql): one table with two `tstzrange` columns (`valid` = business time,
-  `recorded` = system time), a GiST exclusion constraint so no two beliefs overlap, and
-  `set_customer`, the procedure that retires overlapping versions and re-asserts the split
-  slices. That procedure is the thing you would write, test and maintain **per table**.
-- [`demo.py`](demo.py): replays the story and asks the auditor's questions in SQL.
+The demo's writes are the same SQL as in `03-xtdb`:
 
-What to point at while it runs:
+```sql
+INSERT INTO customers (_id, name, risk_rating) VALUES (1, 'Alice', 'LOW');
+INSERT INTO customers (_id, name, risk_rating, _valid_from) VALUES (1, 'Alice', 'HIGH', '2026-01-01');
+```
 
-- The ACME history: three business facts became **six rows** after one backdated correction.
-- Every query needs `valid @> …` **and** `recorded @> …` on every table it touches;
-  question 3 (a self-join) already has four time predicates.
-- *Pitfall 1*: the obvious `SELECT … WHERE customer_id = 'ACME'` returns six limits.
-- *Pitfall 2*: a plain `UPDATE` from a DBA rewrites history; the filed report can no longer
-  be reproduced and nothing in the database noticed. Preventing that means more code:
-  `REVOKE`, triggers, review processes.
+What makes that work is [`schema.sql`](schema.sql), about 70 lines for **one** table:
+
+- `customers_history`: every version, with `_valid_from/_to` (when it was true) and
+  `_system_from/_to` (when the database believed it), plus a GiST exclusion constraint so no
+  two beliefs overlap.
+- `customers`: a view of what we believe now, about now. `INSTEAD OF` triggers turn plain
+  `INSERT` (an upsert from `_valid_from`, default now), `UPDATE` (patches the changed columns
+  from now on, per column) and `DELETE` into versioned writes that keep every earlier belief.
+- `customers_as_of(valid_at, known_at)`: the time-travel query, since Postgres has no
+  `FOR … AS OF`.
+- A guard trigger that makes the history table append-only. New beliefs start now, and now
+  never goes backwards. The last step of the demo shows a direct `UPDATE` and a backdated
+  `INSERT` being rejected.
+
+What it still doesn't cover is listed at the bottom of `schema.sql`. Most notably, a superuser
+can switch all of it off (`DROP`/`DISABLE TRIGGER`, `session_replication_role = replica`), and
+everything has to be repeated for every table.

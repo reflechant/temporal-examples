@@ -1,38 +1,15 @@
-"""Bitemporal credit file in plain PostgreSQL: every bit of time handling is hand-made.
+"""Alice's risk rating in plain PostgreSQL: bitemporality, built by hand (see schema.sql).
 
-Run:  docker compose up -d && python demo.py          (add --no-pause to run straight through)
+Run:  docker compose up -d --wait && python demo.py   (add --no-pause to run straight through)
 """
 import datetime as dt
 import pathlib
 import sys
 
 import psycopg
-from psycopg.types.range import Range
 
 DSN = "postgresql://postgres:demo@localhost:54321/postgres"
 PAUSE = sys.stdin.isatty() and "--no-pause" not in sys.argv
-
-
-# ---------------------------------------------------------------- presentation helpers
-
-def fmt(v):
-    if isinstance(v, Range):
-        return f"[{fmt(v.lower)}, {fmt(v.upper) if v.upper else '∞'})"
-    if isinstance(v, dt.datetime):
-        return v.astimezone(dt.timezone.utc).strftime("%Y-%m-%d %H:%M")
-    if isinstance(v, (int, float)) or type(v).__name__ == "Decimal":
-        return f"{v:,.0f}"
-    return str(v)
-
-
-def table(cols, rows):
-    rows = [[fmt(v) for v in r] for r in rows]
-    w = [max(len(c), *(len(r[i]) for r in rows)) if rows else len(c) for i, c in enumerate(cols)]
-    print("  " + " | ".join(c.ljust(n) for c, n in zip(cols, w)))
-    print("  " + "-+-".join("-" * n for n in w))
-    for r in rows:
-        print("  " + " | ".join(v.ljust(n) for v, n in zip(r, w)))
-    print()
 
 
 def step(title):
@@ -43,71 +20,47 @@ def step(title):
 
 def sql(conn, text):
     print("\033[2m" + text.strip() + "\033[0m\n")
-    cur = conn.execute(text)
+    try:
+        cur = conn.execute(text)
+    except psycopg.Error as e:
+        print(f"  REJECTED: {e.diag.message_primary}\n")
+        return
     if cur.description:
-        table([d.name for d in cur.description], cur.fetchall())
+        cols = [d.name for d in cur.description]
+        rows = [[v.strftime("%Y-%m-%d %H:%M") if isinstance(v, dt.datetime) else str(v) for v in r]
+                for r in cur.fetchall()]
+        w = [max(len(c), *(len(r[i]) for r in rows)) if rows else len(c) for i, c in enumerate(cols)]
+        print("  " + " | ".join(c.ljust(n) for c, n in zip(cols, w)))
+        print("  " + "-+-".join("-" * n for n in w))
+        for r in rows:
+            print("  " + " | ".join(v.ljust(n) for v, n in zip(r, w)))
+        print()
 
 
-# ---------------------------------------------------------------- the demo
+schema = pathlib.Path(__file__).with_name("schema.sql").read_text()
+code_lines = [l for l in schema.splitlines() if l.strip() and not l.strip().startswith("--")]
 
-REPORT = """
-SELECT customer_id, risk, credit_limit
-FROM customer_version
-WHERE valid    @> timestamptz '2026-03-31 18:00Z'  -- business time: quarter end
-  AND recorded @> {known_at}  -- system time: as the DB knew it at that moment
-ORDER BY customer_id"""
+with psycopg.connect(DSN, autocommit=True, options="-c timezone=UTC") as db:
+    db.execute(schema)
+    print(f"schema.sql: {len(code_lines)} lines of SQL and PL/pgSQL you own, for ONE table")
 
-with psycopg.connect(DSN, autocommit=True) as db:
-    db.execute(pathlib.Path(__file__).with_name("schema.sql").read_text())
+    step("2026-01-01  the bank records Alice as LOW risk")
+    sql(db, "SET app.now = '2026-01-01 09:00Z'  -- demo clock")
+    sql(db, "INSERT INTO customers (_id, name, risk_rating) VALUES (1, 'Alice', 'LOW')")
 
-    step("2026-01-10  alice onboards two customers")
-    sql(db, """
-INSERT INTO customer_version VALUES
-  ('ACME',   'LOW',    1000000, tstzrange('2026-01-10 09:00Z', NULL), tstzrange('2026-01-10 09:00Z', NULL), 'alice', 'onboarding'),
-  ('GLOBEX', 'MEDIUM',  500000, tstzrange('2026-01-10 09:00Z', NULL), tstzrange('2026-01-10 09:00Z', NULL), 'alice', 'onboarding')""")
+    step("2026-01-10  the bank approves a loan, based on LOW")
 
-    step("2026-02-01  alice raises ACME's limit (through our hand-written procedure)")
-    sql(db, """
-CALL set_customer('ACME', NULL, 2000000, tstzrange('2026-02-01 10:00Z', NULL),
-                  'alice', 'annual review', p_now => '2026-02-01 10:00Z')""")
+    step("2026-01-15  the bank discovers Alice should have been HIGH since 2026-01-01")
+    sql(db, "SET app.now = '2026-01-15 10:00Z'  -- demo clock")
+    sql(db, "INSERT INTO customers (_id, name, risk_rating, _valid_from) VALUES (1, 'Alice', 'HIGH', '2026-01-01')")
+    db.execute("RESET app.now")
 
-    step("2026-03-31  Q1 regulatory report is generated and filed")
-    sql(db, REPORT.format(known_at="timestamptz '2026-03-31 18:00Z'"))
+    step("Q1: what do we now believe was true on 2026-01-10?")
+    sql(db, "SELECT * FROM customers_as_of('2026-01-10 12:00Z')")
 
-    step("2026-04-07  bob: adverse media about ACME dated 2026-01-20 -> HIGH risk, backdated")
-    sql(db, """
-CALL set_customer('ACME', 'HIGH', NULL, tstzrange('2026-01-20 00:00Z', NULL),
-                  'bob', 'KYC-123 adverse media', p_now => '2026-04-07 14:00Z')""")
+    step("Q2: what did we believe on 2026-01-10?")
+    sql(db, "SELECT * FROM customers_as_of('2026-01-10 12:00Z', known_at => '2026-01-10 12:00Z')")
 
-    step("Auditor, June: 1) reproduce the filed Q1 report exactly")
-    sql(db, REPORT.format(known_at="timestamptz '2026-03-31 18:00Z'"))
-
-    step("Auditor: 2) what was really true on 2026-03-31, with what we know today?")
-    sql(db, REPORT.format(known_at="now()"))
-
-    step("Auditor: 3) which figures in the filed report are now known to be wrong?")
-    sql(db, """
-SELECT filed.customer_id,
-       filed.risk AS filed_risk, today.risk AS actual_risk,
-       filed.credit_limit AS filed_limit, today.credit_limit AS actual_limit
-FROM customer_version filed
-JOIN customer_version today USING (customer_id)
-WHERE filed.valid    @> timestamptz '2026-03-31 18:00Z'
-  AND filed.recorded @> timestamptz '2026-03-31 18:00Z'
-  AND today.valid    @> timestamptz '2026-03-31 18:00Z'
-  AND upper_inf(today.recorded)
-  AND (filed.risk, filed.credit_limit) IS DISTINCT FROM (today.risk, today.credit_limit)""")
-
-    step("Auditor: 4) full history of ACME: who changed what, when, why")
-    sql(db, """
-SELECT risk, credit_limit, valid, recorded, changed_by, reason
-FROM customer_version WHERE customer_id = 'ACME'
-ORDER BY lower(recorded), lower(valid)""")
-
-    step("Pitfall 1: the 'obvious' query a new developer writes. What is ACME's limit?")
-    sql(db, "SELECT risk, credit_limit FROM customer_version WHERE customer_id = 'ACME'")
-
-    step("Pitfall 2: 2026-04-08, a DBA hotfixes GLOBEX's limit with a plain UPDATE")
-    sql(db, "UPDATE customer_version SET credit_limit = 600000 WHERE customer_id = 'GLOBEX'")
-    print("  ... and the filed Q1 report can no longer be reproduced. Nothing complained:\n")
-    sql(db, REPORT.format(known_at="timestamptz '2026-03-31 18:00Z'"))
+    step("Postgres only: the guards that keep the answer to Q2 true")
+    sql(db, "UPDATE customers_history SET risk_rating = 'HIGH' WHERE _id = 1")
+    sql(db, "INSERT INTO customers_history VALUES (1, 'Alice', 'HIGH', '2026-01-01', NULL, '2026-01-05', NULL)")
